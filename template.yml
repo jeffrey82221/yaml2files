@@ -1,0 +1,21 @@
+template:
+  matrix:
+    var1: [1, 2, 3]
+    var2: ['a', 'b', 'c']
+    var3: ['d', 'e']
+  folders:
+    0:
+      name: 'data'
+      folders:
+        0: 
+          name: 'data_{{ var1 }}'
+          files:
+            1: 
+              name: 'generate_{{ var2 }}'
+              content: 'helloworld_{{ var2 }}'
+        1:
+          name: 'c_data_{{ var1 }}'
+          files:
+            0:
+              name: 'generate_{{ var3 }}'
+              content: ''
