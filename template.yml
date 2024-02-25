@@ -1,8 +1,6 @@
 template:
   matrix:
     var1: [1, 2, 3]
-    var2: ['a', 'b', 'c']
-    var3: ['d', 'e']
   folders:
     0:
       name: 'data'
@@ -11,11 +9,15 @@ template:
           name: 'data_{{ var1 }}'
           files:
             1: 
+              matrix:
+                var2: ['a', 'b', 'c']
               name: 'generate_{{ var2 }}'
               content: 'helloworld_{{ var2 }}'
         1:
           name: 'c_data_{{ var1 }}'
           files:
             0:
+              matrix:
+                var3: ['d', 'e']
               name: 'generate_{{ var3 }}'
               content: ''

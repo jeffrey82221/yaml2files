@@ -2,7 +2,6 @@ import os
 import yaml
 import jinja2
 import copy
-import shutil
 
 def get_config(config_file):
     with open(config_file, 'r') as f:
@@ -16,25 +15,14 @@ def create_folder(folder_name):
 
 
 def create_file(file_name, content):
+    _content = copy.copy(content)
     with open(file_name, 'w') as f:
-        f.write(content)
+        f.write(_content)
     print('file:', file_name, 'created')
 
 def render(template, vars):
-    return jinja2.Template(template).render(**vars)
-
-def generate_files(folders, directory = '.', var_instance=dict()):
-    for _, folder_content in folders.items():
-        folder_name = render(folder_content['name'], var_instance)
-        create_folder(directory + '/' + folder_name)
-        if 'files' in folder_content:
-            for _, file_content in folder_content['files'].items():
-                file_name = render(file_content['name'], var_instance)
-                file_content = render(file_content['content'], var_instance)
-                create_file(directory + '/' + folder_name + '/' + file_name, file_content)
-        elif 'folders' in folder_content:
-            generate_files(folder_content['folders'], 
-                            directory=directory + '/' +folder_name, var_instance=var_instance)
+    _template = copy.copy(template)
+    return jinja2.Template(_template).render(**vars)
 
 def get_permute(top_list):
     results = []
@@ -57,6 +45,39 @@ def permute_matrix(matrix):
     for indices in indices_list:
         results.append(dict([(var, matrix[var][indices[i]]) for i, var in enumerate(vars)]))
     return results
+
+def expand_var_instance(var_instance, matrix):
+    var_instance_list = []
+    for var_instance in permute_matrix(matrix):
+        _var_instance = copy.copy(var_instance)
+        _var_instance.update(var_instance)
+        var_instance_list.append(_var_instance)
+    return var_instance_list
+
+def generate_files(folders, directory = '.', var_instance=dict()):
+    for _, folder_content in folders.items():
+        if 'matrix' in folder_content:
+            var_instance_list = expand_var_instance(var_instance, folder_content['matrix'])
+        else:
+            var_instance_list = [var_instance]
+        for var_i in var_instance_list:
+            folder_name = render(folder_content['name'], var_i)
+            create_folder(directory + '/' + folder_name)
+            if 'files' in folder_content:
+                for _, file_content in folder_content['files'].items():
+                    if 'matrix' in file_content:
+                        var_instance_list_inner = expand_var_instance(var_instance, file_content['matrix'])
+                    else:
+                        var_instance_list_inner = [var_instance]
+                    for var_j in var_instance_list_inner:
+                        file_name = render(file_content['name'], var_j)
+                        content_text = render(file_content['content'], var_j)
+                        create_file(directory + '/' + folder_name + '/' + file_name, content_text)
+            elif 'folders' in folder_content:
+                generate_files(folder_content['folders'], 
+                                directory=directory + '/' +folder_name, var_instance=var_i)
+
+
 
 def generate_all_files(folders, matrix):
     instances = permute_matrix(matrix)
